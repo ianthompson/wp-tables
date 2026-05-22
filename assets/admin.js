@@ -8,6 +8,8 @@
 	var $columnWidths = $('#wpt-column-widths');
 	var $headerOption = $('#wpt-first-row-headers');
 	var $fontSize = $('#wpt-font-size');
+	var $customFontSize = $('#wpt-custom-font-size');
+	var $fontFamily = $('#wpt-font-family');
 	var $borderStyle = $('#wpt-border-style');
 	var $borderColor = $('#wpt-border-color');
 	var $removeButton = $('#wpt-remove-csv');
@@ -37,6 +39,8 @@
 			attachmentId: attachmentId,
 			hasHeaders: $headerOption.is(':checked') ? 1 : 0,
 			fontSize: $fontSize.val(),
+			customFontSize: $customFontSize.val(),
+			fontFamily: $fontFamily.val(),
 			borderStyle: $borderStyle.val(),
 			borderColor: $borderColor.val(),
 			columnWidths: getColumnWidths()
@@ -75,6 +79,10 @@
 		$row.find('input').prop('disabled', auto);
 	}
 
+	function updateCustomFontSize() {
+		$customFontSize.prop('readonly', $fontSize.val() !== 'custom');
+	}
+
 	$('#wpt-select-csv').on('click', function () {
 		if (frame) {
 			frame.open();
@@ -111,7 +119,12 @@
 		loadPreview();
 	});
 
-	$headerOption.add($fontSize).add($borderStyle).add($borderColor).on('change', loadPreview);
+	$headerOption.add($fontFamily).add($borderStyle).add($borderColor).on('change', loadPreview);
+	$fontSize.on('change', function () {
+		updateCustomFontSize();
+		loadPreview();
+	});
+	$customFontSize.on('change', loadPreview);
 	$columnWidths.on('change', 'select', function () {
 		updateWidthInput.call(this);
 

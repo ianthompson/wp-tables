@@ -1,5 +1,6 @@
 .wpt-table {
 	border-collapse: collapse;
+	font-family: var(--wpt-font-family, inherit);
 	width: 100%;
 }
 
@@ -29,6 +30,10 @@
 
 .wpt-table.wpt-font-size-x-large {
 	font-size: 125%;
+}
+
+.wpt-table.wpt-font-size-custom {
+	font-size: var(--wpt-font-size);
 }
 
 .wpt-table.wpt-borders-all td,
