@@ -11,7 +11,8 @@
 	margin: 16px 0;
 }
 
-.wpt-font-size-option {
+.wpt-font-size-option,
+.wpt-border-option {
 	align-items: center;
 	display: flex;
 	gap: 8px;
@@ -30,7 +31,7 @@
 
 .wpt-preview-table td,
 .wpt-preview-table th {
-	border: 1px solid #c3c4c7;
+	border: 0;
 	padding: 8px;
 	text-align: left;
 	vertical-align: top;
@@ -42,17 +43,38 @@
 }
 
 .wpt-preview-table.wpt-font-size-small {
-	font-size: 12px;
+	font-size: 80%;
 }
 
 .wpt-preview-table.wpt-font-size-medium {
-	font-size: 14px;
+	font-size: 90%;
 }
 
 .wpt-preview-table.wpt-font-size-large {
-	font-size: 16px;
+	font-size: 110%;
 }
 
 .wpt-preview-table.wpt-font-size-x-large {
-	font-size: 18px;
+	font-size: 125%;
+}
+
+.wpt-preview-table.wpt-borders-all td,
+.wpt-preview-table.wpt-borders-all th {
+	border: 1px solid var(--wpt-border-color);
+}
+
+.wpt-preview-table.wpt-borders-vertical td,
+.wpt-preview-table.wpt-borders-vertical th {
+	border-left: 1px solid var(--wpt-border-color);
+	border-right: 1px solid var(--wpt-border-color);
+}
+
+.wpt-preview-table.wpt-borders-horizontal td,
+.wpt-preview-table.wpt-borders-horizontal th {
+	border-bottom: 1px solid var(--wpt-border-color);
+	border-top: 1px solid var(--wpt-border-color);
+}
+
+.wpt-preview-table.wpt-borders-header thead th {
+	border: 1px solid var(--wpt-border-color);
 }

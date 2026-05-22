@@ -5,7 +5,7 @@
 
 .wpt-table td,
 .wpt-table th {
-	border: 1px solid currentColor;
+	border: 0;
 	padding: 0.55rem 0.7rem;
 	text-align: left;
 	vertical-align: top;
@@ -16,19 +16,40 @@
 }
 
 .wpt-table.wpt-font-size-small {
-	font-size: 0.75rem;
+	font-size: 80%;
 }
 
 .wpt-table.wpt-font-size-medium {
-	font-size: 0.875rem;
+	font-size: 90%;
 }
 
 .wpt-table.wpt-font-size-large {
-	font-size: 1rem;
+	font-size: 110%;
 }
 
 .wpt-table.wpt-font-size-x-large {
-	font-size: 1.125rem;
+	font-size: 125%;
+}
+
+.wpt-table.wpt-borders-all td,
+.wpt-table.wpt-borders-all th {
+	border: 1px solid var(--wpt-border-color);
+}
+
+.wpt-table.wpt-borders-vertical td,
+.wpt-table.wpt-borders-vertical th {
+	border-left: 1px solid var(--wpt-border-color);
+	border-right: 1px solid var(--wpt-border-color);
+}
+
+.wpt-table.wpt-borders-horizontal td,
+.wpt-table.wpt-borders-horizontal th {
+	border-bottom: 1px solid var(--wpt-border-color);
+	border-top: 1px solid var(--wpt-border-color);
+}
+
+.wpt-table.wpt-borders-header thead th {
+	border: 1px solid var(--wpt-border-color);
 }
 
 .wpt-responsive-table {
