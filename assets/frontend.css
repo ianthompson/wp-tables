@@ -15,11 +15,33 @@
 	font-weight: 600;
 }
 
+.wpt-table.wpt-font-size-small {
+	font-size: 0.75rem;
+}
+
+.wpt-table.wpt-font-size-medium {
+	font-size: 0.875rem;
+}
+
+.wpt-table.wpt-font-size-large {
+	font-size: 1rem;
+}
+
+.wpt-table.wpt-font-size-x-large {
+	font-size: 1.125rem;
+}
+
 .wpt-responsive-table {
 	max-width: 100%;
 	overflow-x: auto;
 }
 
 .wpt-responsive-table > .wpt-table {
-	min-width: max-content;
+	table-layout: auto;
+	width: 100%;
+}
+
+.wpt-responsive-table td,
+.wpt-responsive-table th {
+	overflow-wrap: anywhere;
 }

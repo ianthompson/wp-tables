@@ -3,7 +3,7 @@
  * Plugin Name: WP Tables
  * Plugin URI: https://github.com/ianthompson/wp-tables
  * Description: Create frontend tables from CSV files stored in the WordPress media library.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Ian Thompson
  * Update URI: https://github.com/ianthompson/wp-tables
  * Text Domain: wp-tables
@@ -18,6 +18,7 @@ final class WP_Tables_Plugin {
 	const META_CSV = '_wpt_csv_attachment_id';
 	const META_HEADERS = '_wpt_first_row_headers';
 	const META_RESPONSIVE = '_wpt_responsive';
+	const META_FONT_SIZE = '_wpt_font_size';
 	const NONCE_ACTION = 'wpt_save_table';
 	const PREVIEW_ACTION = 'wpt_preview_csv';
 	const UPDATE_URI = 'https://github.com/ianthompson/wp-tables';
@@ -126,6 +127,7 @@ final class WP_Tables_Plugin {
 		$attachment_id = absint( get_post_meta( $post->ID, self::META_CSV, true ) );
 		$has_headers   = self::get_boolean_meta( $post->ID, self::META_HEADERS, true );
 		$responsive    = self::get_boolean_meta( $post->ID, self::META_RESPONSIVE, true );
+		$font_size     = self::get_font_size( $post->ID );
 		$attachment    = $attachment_id ? get_post( $attachment_id ) : null;
 		$file_label    = $attachment ? get_the_title( $attachment ) : __( 'No CSV selected', 'wp-tables' );
 
@@ -147,11 +149,19 @@ final class WP_Tables_Plugin {
 					<input name="wpt_responsive" type="checkbox" value="1" <?php checked( $responsive ); ?>>
 					<?php esc_html_e( 'Make table responsive', 'wp-tables' ); ?>
 				</label>
+				<label class="wpt-font-size-option">
+					<span><?php esc_html_e( 'Table font size', 'wp-tables' ); ?></span>
+					<select id="wpt-font-size" name="wpt_font_size">
+						<?php foreach ( self::get_font_size_options() as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $font_size, $value ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
 			</fieldset>
 			<div class="wpt-preview-shell">
 				<h3><?php esc_html_e( 'Preview', 'wp-tables' ); ?></h3>
 				<div id="wpt-csv-preview" class="wpt-preview" aria-live="polite">
-					<?php self::render_admin_preview( $attachment_id, $has_headers ); ?>
+					<?php self::render_admin_preview( $attachment_id, $has_headers, $font_size ); ?>
 				</div>
 			</div>
 		</div>
@@ -193,6 +203,9 @@ final class WP_Tables_Plugin {
 
 		self::save_boolean_meta( $post_id, self::META_HEADERS, isset( $_POST['wpt_first_row_headers'] ) );
 		self::save_boolean_meta( $post_id, self::META_RESPONSIVE, isset( $_POST['wpt_responsive'] ) );
+
+		$font_size = isset( $_POST['wpt_font_size'] ) ? sanitize_key( wp_unslash( $_POST['wpt_font_size'] ) ) : 'default';
+		update_post_meta( $post_id, self::META_FONT_SIZE, self::sanitize_font_size( $font_size ) );
 	}
 
 	public static function enqueue_admin_assets( $hook ) {
@@ -203,8 +216,8 @@ final class WP_Tables_Plugin {
 		}
 
 		wp_enqueue_media();
-		wp_enqueue_style( 'wpt-admin', plugins_url( 'assets/admin.css', __FILE__ ), array(), '0.1.0' );
-		wp_enqueue_script( 'wpt-admin', plugins_url( 'assets/admin.js', __FILE__ ), array( 'jquery' ), '0.1.0', true );
+		wp_enqueue_style( 'wpt-admin', plugins_url( 'assets/admin.css', __FILE__ ), array(), '0.2.0' );
+		wp_enqueue_script( 'wpt-admin', plugins_url( 'assets/admin.js', __FILE__ ), array( 'jquery' ), '0.2.0', true );
 		wp_localize_script(
 			'wpt-admin',
 			'wptAdmin',
@@ -232,6 +245,7 @@ final class WP_Tables_Plugin {
 
 		$attachment_id = isset( $_POST['attachmentId'] ) ? absint( $_POST['attachmentId'] ) : 0;
 		$has_headers   = ! empty( $_POST['hasHeaders'] );
+		$font_size     = isset( $_POST['fontSize'] ) ? self::sanitize_font_size( sanitize_key( wp_unslash( $_POST['fontSize'] ) ) ) : 'default';
 
 		if ( ! self::is_csv_attachment( $attachment_id ) ) {
 			wp_send_json_error( array( 'message' => __( 'The selected media item is not a CSV file.', 'wp-tables' ) ), 400 );
@@ -245,7 +259,7 @@ final class WP_Tables_Plugin {
 
 		wp_send_json_success(
 			array(
-				'html' => self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table' ),
+				'html' => self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size ),
 			)
 		);
 	}
@@ -265,17 +279,18 @@ final class WP_Tables_Plugin {
 			return '';
 		}
 
-		wp_enqueue_style( 'wpt-frontend', plugins_url( 'assets/frontend.css', __FILE__ ), array(), '0.1.0' );
+		wp_enqueue_style( 'wpt-frontend', plugins_url( 'assets/frontend.css', __FILE__ ), array(), '0.2.0' );
 
 		return self::build_table_markup(
 			$rows,
 			self::get_boolean_meta( $id, self::META_HEADERS, true ),
 			self::get_boolean_meta( $id, self::META_RESPONSIVE, true ),
-			'wpt-table'
+			'wpt-table',
+			self::get_font_size( $id )
 		);
 	}
 
-	private static function render_admin_preview( $attachment_id, $has_headers ) {
+	private static function render_admin_preview( $attachment_id, $has_headers, $font_size ) {
 		if ( ! $attachment_id ) {
 			echo '<p>' . esc_html__( 'Select a CSV file to preview the table.', 'wp-tables' ) . '</p>';
 			return;
@@ -288,7 +303,7 @@ final class WP_Tables_Plugin {
 			return;
 		}
 
-		echo self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	private static function read_csv_rows( $attachment_id, $limit = 0 ) {
@@ -327,12 +342,15 @@ final class WP_Tables_Plugin {
 		return $rows;
 	}
 
-	private static function build_table_markup( $rows, $has_headers, $responsive, $class_name ) {
+	private static function build_table_markup( $rows, $has_headers, $responsive, $class_name, $font_size = 'default' ) {
 		if ( empty( $rows ) ) {
 			return '<p>' . esc_html__( 'This CSV file has no table rows.', 'wp-tables' ) . '</p>';
 		}
 
-		$markup = sprintf( '<table class="%s">', esc_attr( $class_name ) );
+		$markup = sprintf(
+			'<table class="%s">',
+			esc_attr( $class_name . ' wpt-font-size-' . self::sanitize_font_size( $font_size ) )
+		);
 
 		if ( $has_headers ) {
 			$heading_row = array_shift( $rows );
@@ -375,6 +393,26 @@ final class WP_Tables_Plugin {
 		$extension = $path ? strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ) : '';
 
 		return 'csv' === $extension;
+	}
+
+	private static function get_font_size_options() {
+		return array(
+			'default' => __( 'Theme default', 'wp-tables' ),
+			'small'   => __( 'Small', 'wp-tables' ),
+			'medium'  => __( 'Medium', 'wp-tables' ),
+			'large'   => __( 'Large', 'wp-tables' ),
+			'x-large' => __( 'Extra large', 'wp-tables' ),
+		);
+	}
+
+	private static function get_font_size( $post_id ) {
+		return self::sanitize_font_size( get_post_meta( $post_id, self::META_FONT_SIZE, true ) );
+	}
+
+	private static function sanitize_font_size( $font_size ) {
+		$options = self::get_font_size_options();
+
+		return isset( $options[ $font_size ] ) ? $font_size : 'default';
 	}
 
 	private static function get_latest_release() {

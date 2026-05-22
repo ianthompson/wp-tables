@@ -2,7 +2,7 @@
 Contributors: ianthompson
 Tags: csv, tables, shortcode
 Requires at least: 6.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 
 Create frontend tables from CSV files in the WordPress media library.
@@ -12,7 +12,7 @@ Create frontend tables from CSV files in the WordPress media library.
 1. Activate WP Tables.
 2. Go to Tables > Add New and give the table a title.
 3. Select or upload a CSV file from the media library.
-4. Choose whether the first CSV line is the column heading and whether the table should use the responsive wrapper.
+4. Choose whether the first CSV line is the column heading, whether the table should be responsive, and its font size.
 5. Save or publish the table.
 6. Copy the generated `[wptables id="123"]` shortcode into a post, page, or shortcode block.
 

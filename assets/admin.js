@@ -6,6 +6,7 @@
 	var $fileLabel = $('#wpt-csv-file-label');
 	var $preview = $('#wpt-csv-preview');
 	var $headerOption = $('#wpt-first-row-headers');
+	var $fontSize = $('#wpt-font-size');
 	var $removeButton = $('#wpt-remove-csv');
 
 	function isCsv(attachment) {
@@ -31,7 +32,8 @@
 			action: wptAdmin.action,
 			nonce: wptAdmin.nonce,
 			attachmentId: attachmentId,
-			hasHeaders: $headerOption.is(':checked') ? 1 : 0
+			hasHeaders: $headerOption.is(':checked') ? 1 : 0,
+			fontSize: $fontSize.val()
 		}).done(function (response) {
 			if (response.success && response.data.html) {
 				$preview.html(response.data.html);
@@ -81,5 +83,5 @@
 		loadPreview();
 	});
 
-	$headerOption.on('change', loadPreview);
+	$headerOption.add($fontSize).on('change', loadPreview);
 })(jQuery);
