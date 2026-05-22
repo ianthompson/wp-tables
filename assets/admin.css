@@ -11,11 +11,23 @@
 	margin: 16px 0;
 }
 
-.wpt-font-size-option,
+.wpt-font-option,
 .wpt-border-option {
 	align-items: center;
 	display: flex;
 	gap: 8px;
+}
+
+.wpt-typography-options {
+	align-items: end;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+
+.wpt-custom-font-size {
+	display: grid;
+	gap: 4px;
 }
 
 .wpt-preview {
@@ -43,6 +55,7 @@
 .wpt-preview-table {
 	background: #fff;
 	border-collapse: collapse;
+	font-family: var(--wpt-font-family, inherit);
 	min-width: 100%;
 }
 
@@ -73,6 +86,10 @@
 
 .wpt-preview-table.wpt-font-size-x-large {
 	font-size: 125%;
+}
+
+.wpt-preview-table.wpt-font-size-custom {
+	font-size: var(--wpt-font-size);
 }
 
 .wpt-preview-table.wpt-borders-all td,
