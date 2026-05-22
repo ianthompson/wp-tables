@@ -3,7 +3,7 @@
  * Plugin Name: WP Tables
  * Plugin URI: https://github.com/ianthompson/wp-tables
  * Description: Create frontend tables from CSV files stored in the WordPress media library.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Author: Ian Thompson
  * Update URI: https://github.com/ianthompson/wp-tables
  * Text Domain: wp-tables
@@ -21,6 +21,7 @@ final class WP_Tables_Plugin {
 	const META_FONT_SIZE = '_wpt_font_size';
 	const META_BORDER_STYLE = '_wpt_border_style';
 	const META_BORDER_COLOR = '_wpt_border_color';
+	const META_COLUMN_WIDTHS = '_wpt_column_widths';
 	const NONCE_ACTION = 'wpt_save_table';
 	const PREVIEW_ACTION = 'wpt_preview_csv';
 	const UPDATE_URI = 'https://github.com/ianthompson/wp-tables';
@@ -132,6 +133,7 @@ final class WP_Tables_Plugin {
 		$font_size     = self::get_font_size( $post->ID );
 		$border_style  = self::get_border_style( $post->ID );
 		$border_color  = self::get_border_color( $post->ID );
+		$column_widths = self::get_column_widths( $post->ID );
 		$attachment    = $attachment_id ? get_post( $attachment_id ) : null;
 		$file_label    = $attachment ? get_the_title( $attachment ) : __( 'No CSV selected', 'wp-tables' );
 
@@ -177,8 +179,11 @@ final class WP_Tables_Plugin {
 			<div class="wpt-preview-shell">
 				<h3><?php esc_html_e( 'Preview', 'wp-tables' ); ?></h3>
 				<div id="wpt-csv-preview" class="wpt-preview" aria-live="polite">
-					<?php self::render_admin_preview( $attachment_id, $has_headers, $font_size, $border_style, $border_color ); ?>
+					<?php self::render_admin_preview( $attachment_id, $has_headers, $font_size, $border_style, $border_color, $column_widths ); ?>
 				</div>
+			</div>
+			<div id="wpt-column-widths" class="wpt-column-widths" aria-live="polite">
+				<?php self::render_column_width_controls( self::get_column_count_from_attachment( $attachment_id ), $column_widths ); ?>
 			</div>
 		</div>
 		<?php
@@ -228,6 +233,9 @@ final class WP_Tables_Plugin {
 
 		$border_color = isset( $_POST['wpt_border_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['wpt_border_color'] ) ) : '';
 		update_post_meta( $post_id, self::META_BORDER_COLOR, self::sanitize_border_color( $border_color ) );
+
+		$column_widths = isset( $_POST['wpt_column_widths'] ) ? self::sanitize_column_widths( wp_unslash( $_POST['wpt_column_widths'] ) ) : array();
+		update_post_meta( $post_id, self::META_COLUMN_WIDTHS, $column_widths );
 	}
 
 	public static function enqueue_admin_assets( $hook ) {
@@ -238,8 +246,8 @@ final class WP_Tables_Plugin {
 		}
 
 		wp_enqueue_media();
-		wp_enqueue_style( 'wpt-admin', plugins_url( 'assets/admin.css', __FILE__ ), array(), '0.3.0' );
-		wp_enqueue_script( 'wpt-admin', plugins_url( 'assets/admin.js', __FILE__ ), array( 'jquery' ), '0.3.0', true );
+		wp_enqueue_style( 'wpt-admin', plugins_url( 'assets/admin.css', __FILE__ ), array(), '0.4.0' );
+		wp_enqueue_script( 'wpt-admin', plugins_url( 'assets/admin.js', __FILE__ ), array( 'jquery' ), '0.4.0', true );
 		wp_localize_script(
 			'wpt-admin',
 			'wptAdmin',
@@ -270,6 +278,7 @@ final class WP_Tables_Plugin {
 		$font_size     = isset( $_POST['fontSize'] ) ? self::sanitize_font_size( sanitize_key( wp_unslash( $_POST['fontSize'] ) ) ) : 'default';
 		$border_style  = isset( $_POST['borderStyle'] ) ? self::sanitize_border_style( sanitize_key( wp_unslash( $_POST['borderStyle'] ) ) ) : 'all';
 		$border_color  = isset( $_POST['borderColor'] ) ? self::sanitize_border_color( sanitize_hex_color( wp_unslash( $_POST['borderColor'] ) ) ) : self::get_default_border_color();
+		$column_widths = isset( $_POST['columnWidths'] ) ? self::sanitize_column_widths( wp_unslash( $_POST['columnWidths'] ) ) : array();
 
 		if ( ! self::is_csv_attachment( $attachment_id ) ) {
 			wp_send_json_error( array( 'message' => __( 'The selected media item is not a CSV file.', 'wp-tables' ) ), 400 );
@@ -283,7 +292,8 @@ final class WP_Tables_Plugin {
 
 		wp_send_json_success(
 			array(
-				'html' => self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size, $border_style, $border_color ),
+				'html'           => self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size, $border_style, $border_color, $column_widths ),
+				'widthControls'  => self::build_column_width_controls( self::get_column_count( $rows ), $column_widths ),
 			)
 		);
 	}
@@ -303,7 +313,7 @@ final class WP_Tables_Plugin {
 			return '';
 		}
 
-		wp_enqueue_style( 'wpt-frontend', plugins_url( 'assets/frontend.css', __FILE__ ), array(), '0.3.0' );
+		wp_enqueue_style( 'wpt-frontend', plugins_url( 'assets/frontend.css', __FILE__ ), array(), '0.4.0' );
 
 		return self::build_table_markup(
 			$rows,
@@ -312,11 +322,12 @@ final class WP_Tables_Plugin {
 			'wpt-table',
 			self::get_font_size( $id ),
 			self::get_border_style( $id ),
-			self::get_border_color( $id )
+			self::get_border_color( $id ),
+			self::get_column_widths( $id )
 		);
 	}
 
-	private static function render_admin_preview( $attachment_id, $has_headers, $font_size, $border_style, $border_color ) {
+	private static function render_admin_preview( $attachment_id, $has_headers, $font_size, $border_style, $border_color, $column_widths ) {
 		if ( ! $attachment_id ) {
 			echo '<p>' . esc_html__( 'Select a CSV file to preview the table.', 'wp-tables' ) . '</p>';
 			return;
@@ -329,7 +340,7 @@ final class WP_Tables_Plugin {
 			return;
 		}
 
-		echo self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size, $border_style, $border_color ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo self::build_table_markup( $rows, $has_headers, false, 'wpt-preview-table', $font_size, $border_style, $border_color, $column_widths ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	private static function read_csv_rows( $attachment_id, $limit = 0 ) {
@@ -368,7 +379,7 @@ final class WP_Tables_Plugin {
 		return $rows;
 	}
 
-	private static function build_table_markup( $rows, $has_headers, $responsive, $class_name, $font_size = 'default', $border_style = 'all', $border_color = '' ) {
+	private static function build_table_markup( $rows, $has_headers, $responsive, $class_name, $font_size = 'default', $border_style = 'all', $border_color = '', $column_widths = array() ) {
 		if ( empty( $rows ) ) {
 			return '<p>' . esc_html__( 'This CSV file has no table rows.', 'wp-tables' ) . '</p>';
 		}
@@ -379,6 +390,7 @@ final class WP_Tables_Plugin {
 			esc_attr( $class_name . ' wpt-font-size-' . self::sanitize_font_size( $font_size ) . ' wpt-borders-' . self::sanitize_border_style( $border_style ) ),
 			esc_attr( '--wpt-border-color: ' . $border_color . ';' )
 		);
+		$markup .= self::build_column_group( $column_widths, self::get_column_count( $rows ) );
 
 		if ( $has_headers ) {
 			$heading_row = array_shift( $rows );
@@ -421,6 +433,125 @@ final class WP_Tables_Plugin {
 		$extension = $path ? strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ) : '';
 
 		return 'csv' === $extension;
+	}
+
+	private static function get_column_count_from_attachment( $attachment_id ) {
+		$rows = self::read_csv_rows( $attachment_id, 21 );
+
+		return is_wp_error( $rows ) ? 0 : self::get_column_count( $rows );
+	}
+
+	private static function get_column_count( $rows ) {
+		$column_count = 0;
+
+		foreach ( $rows as $row ) {
+			$column_count = max( $column_count, count( $row ) );
+		}
+
+		return $column_count;
+	}
+
+	private static function render_column_width_controls( $column_count, $column_widths ) {
+		echo self::build_column_width_controls( $column_count, $column_widths ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	private static function build_column_width_controls( $column_count, $column_widths ) {
+		if ( ! $column_count ) {
+			return '<p>' . esc_html__( 'Select a CSV file to set column widths.', 'wp-tables' ) . '</p>';
+		}
+
+		$column_widths = self::sanitize_column_widths( $column_widths );
+		$markup        = '<h3>' . esc_html__( 'Column widths', 'wp-tables' ) . '</h3>';
+		$markup       .= '<div class="wpt-column-width-grid">';
+
+		for ( $index = 0; $index < $column_count; $index++ ) {
+			$width = isset( $column_widths[ $index ] ) ? $column_widths[ $index ] : array( 'value' => '', 'unit' => 'auto' );
+			$markup .= '<label class="wpt-column-width">';
+			$markup .= '<span>' . esc_html( sprintf( __( 'Column %d', 'wp-tables' ), $index + 1 ) ) . '</span>';
+			$markup .= sprintf(
+				'<input class="small-text" name="wpt_column_widths[%1$d][value]" type="number" min="0" step="0.1" value="%2$s" %3$s>',
+				esc_attr( $index ),
+				esc_attr( $width['value'] ),
+				'auto' === $width['unit'] ? 'disabled' : ''
+			);
+			$markup .= sprintf( '<select name="wpt_column_widths[%d][unit]">', esc_attr( $index ) );
+
+			foreach ( self::get_column_width_units() as $value => $label ) {
+				$markup .= sprintf( '<option value="%s"%s>%s</option>', esc_attr( $value ), selected( $width['unit'], $value, false ), esc_html( $label ) );
+			}
+
+			$markup .= '</select></label>';
+		}
+
+		return $markup . '</div>';
+	}
+
+	private static function build_column_group( $column_widths, $column_count ) {
+		$column_widths = self::sanitize_column_widths( $column_widths );
+
+		if ( ! $column_widths || ! $column_count ) {
+			return '';
+		}
+
+		$markup = '<colgroup>';
+
+		for ( $index = 0; $index < $column_count; $index++ ) {
+			if ( ! isset( $column_widths[ $index ] ) || 'auto' === $column_widths[ $index ]['unit'] ) {
+				$markup .= '<col>';
+				continue;
+			}
+
+			$markup .= sprintf(
+				'<col style="%s">',
+				esc_attr( 'width: ' . $column_widths[ $index ]['value'] . $column_widths[ $index ]['unit'] . ';' )
+			);
+		}
+
+		return $markup . '</colgroup>';
+	}
+
+	private static function get_column_width_units() {
+		return array(
+			'auto' => __( 'Auto', 'wp-tables' ),
+			'%'    => '%',
+			'px'   => 'px',
+		);
+	}
+
+	private static function get_column_widths( $post_id ) {
+		return self::sanitize_column_widths( get_post_meta( $post_id, self::META_COLUMN_WIDTHS, true ) );
+	}
+
+	private static function sanitize_column_widths( $column_widths ) {
+		if ( ! is_array( $column_widths ) ) {
+			return array();
+		}
+
+		$units  = self::get_column_width_units();
+		$widths = array();
+
+		foreach ( $column_widths as $index => $width ) {
+			if ( ! is_array( $width ) || ! is_numeric( $index ) ) {
+				continue;
+			}
+
+			$unit  = isset( $width['unit'] ) && isset( $units[ $width['unit'] ] ) ? $width['unit'] : 'auto';
+			$value = isset( $width['value'] ) ? (float) $width['value'] : 0;
+
+			if ( 'auto' === $unit || $value <= 0 ) {
+				$widths[ absint( $index ) ] = array( 'value' => '', 'unit' => 'auto' );
+				continue;
+			}
+
+			$widths[ absint( $index ) ] = array(
+				'value' => (string) min( $value, '%' === $unit ? 100 : 5000 ),
+				'unit'  => $unit,
+			);
+		}
+
+		ksort( $widths );
+
+		return $widths;
 	}
 
 	private static function get_font_size_options() {

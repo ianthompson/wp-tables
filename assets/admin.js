@@ -5,6 +5,7 @@
 	var $attachmentId = $('#wpt-csv-attachment-id');
 	var $fileLabel = $('#wpt-csv-file-label');
 	var $preview = $('#wpt-csv-preview');
+	var $columnWidths = $('#wpt-column-widths');
 	var $headerOption = $('#wpt-first-row-headers');
 	var $fontSize = $('#wpt-font-size');
 	var $borderStyle = $('#wpt-border-style');
@@ -37,10 +38,12 @@
 			hasHeaders: $headerOption.is(':checked') ? 1 : 0,
 			fontSize: $fontSize.val(),
 			borderStyle: $borderStyle.val(),
-			borderColor: $borderColor.val()
+			borderColor: $borderColor.val(),
+			columnWidths: getColumnWidths()
 		}).done(function (response) {
 			if (response.success && response.data.html) {
 				$preview.html(response.data.html);
+				$columnWidths.html(response.data.widthControls);
 				return;
 			}
 
@@ -49,6 +52,27 @@
 			var message = response.responseJSON && response.responseJSON.data && response.responseJSON.data.message;
 			previewMessage(message || wptAdmin.previewError);
 		});
+	}
+
+	function getColumnWidths() {
+		var widths = {};
+
+		$columnWidths.find('.wpt-column-width').each(function (index) {
+			var $row = $(this);
+			widths[index] = {
+				value: $row.find('input').val(),
+				unit: $row.find('select').val()
+			};
+		});
+
+		return widths;
+	}
+
+	function updateWidthInput() {
+		var $row = $(this).closest('.wpt-column-width');
+		var auto = $row.find('select').val() === 'auto';
+
+		$row.find('input').prop('disabled', auto);
 	}
 
 	$('#wpt-select-csv').on('click', function () {
@@ -88,4 +112,12 @@
 	});
 
 	$headerOption.add($fontSize).add($borderStyle).add($borderColor).on('change', loadPreview);
+	$columnWidths.on('change', 'select', function () {
+		updateWidthInput.call(this);
+
+		if ($(this).val() === 'auto' || $(this).closest('.wpt-column-width').find('input').val()) {
+			loadPreview();
+		}
+	});
+	$columnWidths.on('change', 'input', loadPreview);
 })(jQuery);

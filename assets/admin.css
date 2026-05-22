@@ -23,6 +23,23 @@
 	overflow: auto;
 }
 
+.wpt-column-widths {
+	margin-top: 16px;
+}
+
+.wpt-column-width-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.wpt-column-width {
+	align-items: center;
+	display: grid;
+	gap: 6px;
+	grid-template-columns: minmax(64px, 1fr) 64px 72px;
+}
+
 .wpt-preview-table {
 	background: #fff;
 	border-collapse: collapse;
