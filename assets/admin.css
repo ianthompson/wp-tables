@@ -1,0 +1,36 @@
+.wpt-file-row {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.wpt-options {
+	display: grid;
+	gap: 8px;
+	margin: 16px 0;
+}
+
+.wpt-preview {
+	max-height: 420px;
+	overflow: auto;
+}
+
+.wpt-preview-table {
+	background: #fff;
+	border-collapse: collapse;
+	min-width: 100%;
+}
+
+.wpt-preview-table td,
+.wpt-preview-table th {
+	border: 1px solid #c3c4c7;
+	padding: 8px;
+	text-align: left;
+	vertical-align: top;
+}
+
+.wpt-preview-table th {
+	background: #f0f0f1;
+	font-weight: 600;
+}

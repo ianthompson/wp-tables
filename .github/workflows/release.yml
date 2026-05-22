@@ -1,0 +1,25 @@
+name: Release WordPress Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/wp-tables
+          cp -R assets readme.txt wp-tables.php build/wp-tables/
+          cd build
+          zip -r wp-tables.zip wp-tables
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/wp-tables.zip --generate-notes --title "$GITHUB_REF_NAME"

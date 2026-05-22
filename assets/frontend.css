@@ -1,0 +1,25 @@
+.wpt-table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.wpt-table td,
+.wpt-table th {
+	border: 1px solid currentColor;
+	padding: 0.55rem 0.7rem;
+	text-align: left;
+	vertical-align: top;
+}
+
+.wpt-table th {
+	font-weight: 600;
+}
+
+.wpt-responsive-table {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.wpt-responsive-table > .wpt-table {
+	min-width: max-content;
+}
