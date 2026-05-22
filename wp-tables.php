@@ -178,7 +178,7 @@ final class WP_Tables_Plugin {
 					</label>
 					<label class="wpt-custom-font-size">
 						<span><?php esc_html_e( 'Custom px', 'wp-tables' ); ?></span>
-						<input id="wpt-custom-font-size" class="small-text" name="wpt_custom_font_size" type="number" min="8" max="96" step="1" value="<?php echo esc_attr( $custom_size ); ?>" <?php readonly( 'custom' !== $font_size ); ?>>
+						<input id="wpt-custom-font-size" class="small-text" name="wpt_custom_font_size" type="number" min="8" max="96" step="1" value="<?php echo esc_attr( $custom_size ); ?>"<?php echo 'custom' !== $font_size ? ' readonly' : ''; ?>>
 					</label>
 				</div>
 				<label class="wpt-border-option">
